@@ -1,0 +1,24 @@
+# Visual-OPSD offline (cached-teacher) config.
+# Reads the same parquet shards as ``visual_opsd`` but looks up the
+# teacher's top-K logprobs from a pre-computed cache (built by
+# scripts/visual_opsd/collect_traces.py).
+# Used by scripts/visual_opsd/run_visual_opsd_offline.sh.
+visual_opsd_offline:
+  dataset_names:
+  - Visual_Search
+  - Spatial_Navigation
+  - Jigsaw_Assembly
+  - Chart_Refocus
+  image_transform_args:
+    image_stride: 14
+    max_image_size: 980
+    min_image_size: 378
+    max_pixels: 2_007_040
+  teacher_cache_dir: traces/visual_opsd_teacher_cache
+  is_mandatory: true
+  num_used_data:
+  - 6990
+  - 6000
+  - 6000
+  - 6000
+  weight: 1

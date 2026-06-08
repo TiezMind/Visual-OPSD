@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Editors / IDEs
+.vscode/
+.idea/
+.cursor/
+.claude/
+*.swp
+*.swo
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs and artifacts
+wandb/
+results/
+checkpoints/
+logs/
+*.log
+
+# Models (downloaded separately)
+models/
+
+# Datasets (downloaded separately)
+datasets/
+traces/
+
+# Evaluation outputs
+eval_results/
+
+# Misc
+*.tmp
+*.bak
