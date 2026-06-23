@@ -1,5 +1,30 @@
 # Visual-OPSD: Cross-Modal On-Policy Self-Distillation for Efficient Unified Multimodal Reasoning
 
+<p align="center">
+  <a href="https://www.python.org/downloads/release/python-3100/"><img src="https://img.shields.io/badge/Python-3.10-3776AB?logo=python&logoColor=white" alt="Python 3.10"></a>
+  <a href="https://pytorch.org/"><img src="https://img.shields.io/badge/PyTorch-2.0+-ee4c2c?logo=pytorch&logoColor=white" alt="PyTorch 2.0+"></a>
+  <a href="https://huggingface.co/papers/2606.18974"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Transformers-gold" alt="Hugging Face"></a>
+  <a href="https://pytorch.org/docs/stable/fsdp.html"><img src="https://img.shields.io/badge/Distributed-FSDP-4285F4?logo=pytorch&logoColor=white" alt="FSDP"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue" alt="License Apache 2.0"></a>
+  <a href="https://arxiv.org/abs/2606.18974"><img src="https://img.shields.io/badge/arXiv-2606.18974-b31b1b?logo=arxiv&logoColor=white" alt="arXiv"></a>
+  <br>
+  <a href="https://arxiv.org/abs/2606.18974"><img src="https://img.shields.io/badge/Pre--print-2026-228B22" alt="Pre-print 2026"></a>
+</p>
+
+<p align="center">
+  📄 <a href="https://arxiv.org/abs/2606.18974"><b>Paper</b></a> &nbsp;|&nbsp;
+  📕 <a href="https://arxiv.org/pdf/2606.18974"><b>PDF</b></a> &nbsp;|&nbsp;
+  🤗 <a href="https://huggingface.co/ThinkMorph"><b>Data</b></a> &nbsp;|&nbsp;
+  📊 <a href="#headline-results-paper-table-2-3-run-average"><b>Results</b></a> &nbsp;|&nbsp;
+  ✏️ <a href="#citation"><b>Citation</b></a>
+</p>
+
+<p align="center">
+  <em>Official PyTorch implementation of our cross-modal on-policy self-distillation paper.</em>
+</p>
+
+---
+
 Code release for **Visual-OPSD**, a cross-modal on-policy self-distillation
 framework that transfers the visual generation knowledge of a unified
 multimodal model (UMM) into its text-only understanding pathway —
