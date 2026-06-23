@@ -6,7 +6,9 @@ multimodal model (UMM) into its text-only understanding pathway —
 *without* paying the inference-time cost of generating intermediate
 "visual thought" (VT) images.
 
-![Visual-OPSD main results](docs/main_results.png)
+<p align="center">
+  <img src="docs/main_results1.png" width="90%" />
+</p>
 *Figure 1 of the paper. (a) Visual-OPSD (green) matches or exceeds its
 generative teacher (purple) on 6 of 9 benchmarks. (b) Per-benchmark gains
 over the teacher; VT-helpful spatial tasks dominate. (c) Pareto-dominant
@@ -27,6 +29,10 @@ thought before the final answer. This improves spatial reasoning
 substantially (+75pp on VSP over BAGEL), but each VT costs ~50 diffusion
 steps, inflating per-sample inference latency by roughly 14×.
 
+<p align="center">
+  <img src="docs/Visual-OPSD-compare.png" width="90%" />
+</p>
+
 A pilot intervention on the frozen ThinkMorph teacher (paper Section 2)
 shows that removing or corrupting the intermediate VTs barely changes
 accuracy across all nine benchmarks, while a complementary attention
@@ -34,8 +40,10 @@ analysis on V\* shows that once a VT is rendered the subsequent
 reasoning attends almost exclusively to that generated image and
 ignores the original input:
 
-![Pilot intervention](docs/pilot_intervention.png)
-![Attention analysis](docs/attention_analysis.png)
+<p align="center">
+  <img src="docs/pilot_intervention.png" width="48%" />
+  <img src="docs/attention_analysis.png" width="48%" />
+</p>
 
 Visual-OPSD therefore asks a different question: *does the generation
 pathway encode reasoning knowledge that the understanding pathway
@@ -68,7 +76,9 @@ The paper's answer is yes:
 | Δ vs ThinkMorph                       | **+3.40 pp** | **14.3× faster** |
 | Δ vs Text-only SFT                    | **+10.28 pp** | **2.9× faster** |
 
-![Inference latency comparison](docs/latency_comparison.png)
+<p align="center">
+  <img src="docs/latency_comparison.png" width="90%" />
+</p>
 
 The Visual-OPSD-Noise control (real VT replaced with Gaussian noise of
 matching shape) yields only +0.40pp over Text-only SFT, while Visual-
@@ -78,65 +88,6 @@ distributional gap, against **3.5 %** for the noise control. Together
 these two diagnostics confirm that the transferred signal originates
 from the generation pathway's VT *semantic content* — not from generic
 JSD regularization or from the surrounding privileged structure.
-
-## Repository layout
-
-```
-Visual-OPSD/
-├── README.md                       This file
-├── INSTALL.md                      Environment setup walk-through
-├── TRAIN.md                        Full training recipe + hyper-params
-├── EVAL.md                         Evaluation protocol (uses VLMEvalKit-ThinkMorph)
-├── LICENSE                         Apache 2.0 (inherited from BAGEL)
-├── requirements.txt
-├── download_model.py               Pull the base ThinkMorph-7B checkpoint
-├── inferencer.py                   Interleaved (text + VT) inference engine
-├── examples/
-│   └── inference_demo.py           Minimal text-only inference example
-├── docs/                           Paper figures bundled for the README
-├── modeling/                       Unified model code (frozen from BAGEL/ThinkMorph)
-│   ├── bagel/                        BAGEL wrapper + Qwen2-MoT fused decoder
-│   ├── qwen2/                        Qwen2.5 LLM backbone
-│   ├── siglip/                       SigLIP so400m NaViT vision encoder
-│   ├── cache_utils/                  KV cache utilities
-│   └── autoencoder.py                FLUX VAE wrapper (used only by interleaved inferencer)
-├── data/
-│   ├── configs/                    Training YAML configs
-│   │   ├── visual_opsd.yaml          Main on-policy Visual-OPSD config
-│   │   ├── visual_opsd_offline.yaml  Offline (cached-teacher) variant
-│   │   ├── text_reasoning.yaml       Text-only SFT baseline
-│   │   └── example.yaml              Template
-│   ├── dataset_info.py             Dataset registry (edit / VISUAL_OPSD_DATA_ROOT)
-│   ├── dataset_base.py             Packed-dataset machinery
-│   ├── data_utils.py               Token packing + position-id helpers
-│   ├── transforms.py               ViT / VAE image transforms
-│   ├── visual_opsd_offline_dataset.py  Text-only student sequences (offline variant)
-│   ├── opsd_paired_dataset.py      Raw-envelope iterable for on-policy Visual-OPSD
-│   ├── opsd_pack_builder.py        Builds student / teacher packed batches
-│   │                               (teacher channel is strictly visual-only)
-│   ├── vlm_dataset.py              SFT / JSONL utilities
-│   ├── t2i_dataset.py              T2I pretrain utilities
-│   └── interleave_datasets/        Interleaved text+image datasets
-├── train/                          Shared FSDP + checkpoint utilities
-│   ├── fsdp_utils.py
-│   └── train_utils.py
-└── scripts/
-    └── visual_opsd/                 Visual-OPSD experiment suite (see scripts/visual_opsd/README.md)
-        ├── train_visual_opsd.py             Main on-policy Visual-OPSD trainer
-        ├── train_visual_opsd_offline.py     Offline (cached-teacher) / SFT trainer
-        ├── on_policy_sampler.py             Student sampler (FSDP-aware)
-        ├── opsd_loss.py                     Generalized JSD + Tinker reverse-KL
-        ├── kl_diagnostic.py                 KL diagnostic (Section 2.2 + Appendix I)
-        ├── collect_traces.py                Pre-cache teacher logprobs (offline variant)
-        ├── run_visual_opsd.sh               Main launcher (Visual-OPSD)
-        ├── run_visual_opsd_noise.sh         Noise-control ablation
-        ├── run_sft_baseline.sh              Text-only SFT
-        ├── run_kl_diagnostic.sh             KL diagnostic launcher
-        ├── run_collect_traces.sh            Cache teacher logprobs
-        ├── run_visual_opsd_offline.sh       Offline Visual-OPSD trainer
-        ├── run_sanity.sh                    Tiny sanity launcher
-        └── test_*.py                        Smoke tests
-```
 
 ## Quick start
 
@@ -240,28 +191,11 @@ in the paper (`VSP`, `VisPuzzle`, `ChartQA`, `VStar`, `BLINK-J`, `MMVP`,
 used in the paper (greedy decoding, max 1,024 tokens, single H800,
 batch size 1).
 
-## Method at a glance
+## Method
 
-```
-┌──────────── Privileged teacher context (training only) ────────────┐
-│  system │ ViT(img) │ question │ <ref_intro>                        │
-│         │          │          │ ViT(VT_1) ViT(VT_2) ...            │
-│         │          │          │ <transition> │ student_completion  │
-└────────────────────────────────────────────────────────────────────┘
-                                                  │ (no grad, EMA)
-                                                  ▼
-                                            teacher_logits
-
-┌──────────── Student context ─────────────────────────────────────┐
-│  system │ ViT(img) │ question │ student_completion               │
-└──────────────────────────────────────────────────────────────────┘
-                                                  │ (grad)
-                                                  ▼
-                                            student_logits
-
-L = jsd_weight · generalizedJSD_β=0.5(student_logits, teacher_logits)
-        + ce_weight · CE(student, completion)        # ce_weight=0 by default
-```
+<p align="center">
+  <img src="docs/Visual-OPSD-pipeline.png" width="90%" />
+</p>
 
 - The teacher's privileged channel is **strictly visual-only**: only
   the VT images appear, not the text thoughts or the ground-truth
@@ -282,31 +216,6 @@ L = jsd_weight · generalizedJSD_β=0.5(student_logits, teacher_logits)
 A self-contained walk-through with launcher options is in
 [`scripts/visual_opsd/README.md`](scripts/visual_opsd/README.md), and the step-by-step
 pseudocode is in **Algorithm 1** (Appendix C) of the paper.
-
-## What this repo includes / excludes
-
-**Included.** Full training and inference code for the on-policy
-Visual-OPSD trainer (`train_visual_opsd.py`), the offline (cached-
-teacher) variant (`train_visual_opsd_offline.py`), the SFT baseline,
-the Visual-OPSD-Noise control, the
-KL diagnostic, and supporting data utilities. The underlying UMM
-architecture (BAGEL + Qwen2-MoT + SigLIP NaViT) is inherited unchanged
-from the upstream
-[BAGEL](https://github.com/ByteDance-Seed/Bagel) and
-[ThinkMorph](https://github.com/ThinkMorph/ThinkMorph) releases.
-
-**Not included.**
-
-- The paper itself (under review).
-- Training and evaluation datasets — please download them separately
-  from the [ThinkMorph Hugging Face hub](https://huggingface.co/ThinkMorph).
-- The base ThinkMorph-7B checkpoint — fetched separately via
-  [`download_model.py`](download_model.py).
-- Pre-trained Visual-OPSD student checkpoints — released upon paper
-  acceptance.
-- Evaluation harness — we use the open-source
-  [VLMEvalKit-ThinkMorph](https://github.com/hychaochao/VLMEvalKit_Thinkmorph),
-  which already supports all 9 benchmarks reported in the paper.
 
 ## Hardware
 
@@ -341,14 +250,10 @@ Apache License 2.0 — see [LICENSE](LICENSE).
 ## Citation
 
 ```bibtex
-@article{visualopsd2026,
-  title   = {Visual-OPSD: Cross-Modal On-Policy Self-Distillation for
-             Efficient Unified Multimodal Reasoning},
-  author  = {Anonymous Authors},
-  journal = {arXiv preprint},
-  year    = {2026},
+@article{li2026visual,
+  title={Visual-OPSD: Cross-Modal On-Policy Self-Distillation for Efficient Unified Multimodal Reasoning},
+  author={Li, Pengyu and Gao, Zhitao and Zhang, Lingling and Huang, Muye and Li, Yuanming and Xu, Fangzhi and Liu, Jun},
+  journal={arXiv preprint arXiv:2606.18974},
+  year={2026}
 }
 ```
-
-The author list and arXiv ID will be filled in once the pre-print is
-public.
