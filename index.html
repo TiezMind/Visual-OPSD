@@ -1,0 +1,2034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual-OPSD: Cross-Modal On-Policy Self-Distillation for Efficient Unified Multimodal Reasoning</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f6f7f9;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f0f1f5;
+            --text-primary: #1a1a2e;
+            --text-secondary: #555570;
+            --text-muted: #8e8ea0;
+            --accent-green: #16a34a;
+            --accent-green-dim: #15803d;
+            --accent-purple: #7c3aed;
+            --accent-purple-dim: #6d28d9;
+            --accent-blue: #2563eb;
+            --accent-teal: #0d9488;
+            --accent-orange: #ea580c;
+            --accent-red: #dc2626;
+            --border-color: #e2e4e9;
+            --gradient-green: linear-gradient(135deg, #22c55e, #16a34a);
+            --gradient-purple: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            --gradient-hero: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f0fdf4 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ===== Navbar ===== */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 2rem;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .navbar-brand .icon {
+            font-size: 1.4rem;
+        }
+
+        .navbar-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .navbar-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .navbar-links a:hover {
+            color: var(--accent-green);
+        }
+
+        .navbar-right {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .nav-btn-outline {
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            background: transparent;
+        }
+
+        .nav-btn-outline:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        /* ===== Hero ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 120px 2rem 60px;
+            background: var(--gradient-hero);
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(34, 197, 94, 0.08) 0%, transparent 60%),
+                        radial-gradient(ellipse at 30% 70%, rgba(124, 58, 237, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 18px;
+            border-radius: 100px;
+            background: rgba(22, 163, 74, 0.08);
+            border: 1px solid rgba(22, 163, 74, 0.2);
+            color: var(--accent-green);
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 0.3rem;
+            letter-spacing: -0.03em;
+        }
+
+        .hero h1 .highlight {
+            background: var(--gradient-green);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.1rem, 2vw, 1.35rem);
+            color: var(--text-secondary);
+            max-width: 750px;
+            margin: 1rem auto 2.5rem;
+            font-weight: 400;
+            line-height: 1.6;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-bottom: 2.5rem;
+        }
+
+        .hero-stat {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid var(--border-color);
+            min-width: 140px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .hero-stat .value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .hero-stat .value.green { color: var(--accent-green); }
+        .hero-stat .value.purple { color: var(--accent-purple); }
+        .hero-stat .value.blue { color: var(--accent-blue); }
+        .hero-stat .value.teal { color: var(--accent-teal); }
+
+        .hero-stat .label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.25s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--gradient-green);
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(22, 163, 74, 0.25);
+        }
+
+        .btn-secondary {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-purple);
+            color: var(--accent-purple);
+            transform: translateY(-2px);
+        }
+
+        /* Authors */
+        .authors {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .authors .name {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .authors .affil {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        /* ===== Sections ===== */
+        section {
+            padding: 100px 2rem;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .section-label {
+            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent-green);
+            margin-bottom: 0.8rem;
+        }
+
+        .section-title {
+            font-size: clamp(1.8rem, 3vw, 2.5rem);
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .section-desc {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            line-height: 1.7;
+        }
+
+        /* ===== Overview / Teaser ===== */
+        .overview-section {
+            background: var(--bg-secondary);
+        }
+
+        .teaser-img {
+            width: 100%;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            margin-top: 2rem;
+        }
+
+        /* ===== Finding Section ===== */
+        .finding-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2.5rem;
+        }
+
+        .finding-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+
+        .finding-card:hover {
+            border-color: rgba(22, 163, 74, 0.4);
+            box-shadow: 0 4px 20px rgba(22, 163, 74, 0.08);
+        }
+
+        .finding-card img {
+            width: 100%;
+            display: block;
+        }
+
+        .finding-card .card-body {
+            padding: 1.5rem;
+        }
+
+        .finding-card h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .finding-card p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ===== Capabilities ===== */
+        .cap-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 2.5rem;
+        }
+
+        .cap-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            transition: all 0.3s;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .cap-card:hover {
+            border-color: rgba(22, 163, 74, 0.4);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+        }
+
+        .cap-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .cap-icon.green { background: rgba(22, 163, 74, 0.1); }
+        .cap-icon.purple { background: rgba(124, 58, 237, 0.1); }
+        .cap-icon.blue { background: rgba(37, 99, 235, 0.1); }
+        .cap-icon.teal { background: rgba(13, 148, 136, 0.1); }
+        .cap-icon.orange { background: rgba(234, 88, 12, 0.1); }
+        .cap-icon.red { background: rgba(220, 38, 38, 0.1); }
+
+        .cap-card h4 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+        }
+
+        .cap-card p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ===== Method ===== */
+        .method-section {
+            background: var(--bg-secondary);
+        }
+
+        .method-figure {
+            width: 100%;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            margin: 2rem 0;
+            background: #ffffff;
+            padding: 1rem;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .method-equation {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            margin: 1.5rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--accent-green);
+            text-align: center;
+            overflow-x: auto;
+        }
+
+        .method-steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .method-step {
+            position: relative;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .method-step .step-num {
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--gradient-green);
+            color: #ffffff;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .method-step h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            margin-top: 0.3rem;
+        }
+
+        .method-step p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* ===== Results ===== */
+        .results-table-wrapper {
+            overflow-x: auto;
+            margin-top: 2rem;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            min-width: 900px;
+        }
+
+        .results-table thead {
+            background: var(--bg-card);
+        }
+
+        .results-table th {
+            padding: 14px 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        .results-table th:first-child {
+            text-align: left;
+            padding-left: 20px;
+        }
+
+        .results-table td {
+            padding: 10px 12px;
+            text-align: center;
+            border-bottom: 1px solid rgba(226, 228, 233, 0.7);
+            white-space: nowrap;
+        }
+
+        .results-table td:first-child {
+            text-align: left;
+            padding-left: 20px;
+            font-weight: 500;
+        }
+
+        .results-table tr:hover {
+            background: rgba(22, 163, 74, 0.03);
+        }
+
+        .results-table .group-header td {
+            font-size: 0.78rem;
+            font-style: italic;
+            color: var(--text-muted);
+            padding: 8px 12px;
+            padding-left: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .results-table .highlight-row {
+            background: rgba(22, 163, 74, 0.06);
+        }
+
+        .results-table .highlight-row td {
+            font-weight: 600;
+            position: relative;
+        }
+
+        .results-table .delta-row {
+            background: rgba(0, 0, 0, 0.015);
+        }
+
+        .results-table .delta-row td {
+            font-size: 0.82rem;
+            font-style: italic;
+        }
+
+        .val-best {
+            font-weight: 700;
+            color: var(--accent-green);
+        }
+
+        .val-second {
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .delta-pos {
+            color: var(--accent-teal);
+        }
+
+        .delta-neg {
+            color: var(--accent-red);
+        }
+
+        .results-figures {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2.5rem;
+        }
+
+        .result-fig {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .result-fig img {
+            width: 100%;
+            display: block;
+            background: #ffffff;
+            padding: 0.8rem;
+        }
+
+        .result-fig .caption {
+            padding: 1rem 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* ===== Case Studies ===== */
+        .case-section {
+            background: var(--bg-secondary);
+        }
+
+        .case-carousel {
+            position: relative;
+            margin-top: 2.5rem;
+        }
+
+        .case-cards {
+            display: flex;
+            gap: 1.5rem;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 1rem;
+            scroll-behavior: smooth;
+        }
+
+        .case-cards::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .case-cards::-webkit-scrollbar-track {
+            background: var(--bg-card);
+            border-radius: 3px;
+        }
+
+        .case-cards::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        .case-card {
+            scroll-snap-align: start;
+            min-width: min(700px, 90vw);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .case-images {
+            display: flex;
+            gap: 2px;
+            background: var(--border-color);
+        }
+
+        .case-images img {
+            flex: 1;
+            min-width: 0;
+            height: 220px;
+            object-fit: contain;
+            background: #fafafa;
+            padding: 4px;
+        }
+
+        .case-body {
+            padding: 1.5rem;
+        }
+
+        .case-body .case-question {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .case-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .case-model {
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            line-height: 1.5;
+        }
+
+        .case-model.wrong {
+            background: rgba(220, 38, 38, 0.04);
+            border: 1px solid rgba(220, 38, 38, 0.15);
+        }
+
+        .case-model.correct {
+            background: rgba(22, 163, 74, 0.04);
+            border: 1px solid rgba(22, 163, 74, 0.15);
+        }
+
+        .case-model .model-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .case-model.wrong .model-name { color: var(--accent-red); }
+        .case-model.correct .model-name { color: var(--accent-green); }
+
+        .case-model .answer-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 6px;
+        }
+
+        .case-model.wrong .answer-tag {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--accent-red);
+        }
+
+        .case-model.correct .answer-tag {
+            background: rgba(22, 163, 74, 0.1);
+            color: var(--accent-green);
+        }
+
+        .case-model p {
+            color: var(--text-secondary);
+        }
+
+        .carousel-nav {
+            display: flex;
+            justify-content: center;
+            gap: 0.8rem;
+            margin-top: 1.5rem;
+        }
+
+        .carousel-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .carousel-btn:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        /* ===== Abstract ===== */
+        .abstract-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-top: 2rem;
+            font-size: 0.95rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .abstract-content strong {
+            color: var(--text-primary);
+        }
+
+        /* ===== Citation ===== */
+        .citation-section {
+            background: var(--bg-secondary);
+        }
+
+        .citation-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 2rem;
+            position: relative;
+        }
+
+        .citation-box pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        /* ===== Footer ===== */
+        .footer {
+            padding: 3rem 2rem;
+            text-align: center;
+            border-top: none;
+        }
+
+        .footer p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .footer a {
+            color: var(--accent-green);
+            text-decoration: none;
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .navbar-links { display: none; }
+            .finding-grid { grid-template-columns: 1fr; }
+            .cap-grid { grid-template-columns: 1fr; }
+            .method-steps { grid-template-columns: 1fr; }
+            .results-figures { grid-template-columns: 1fr; }
+            .case-comparison { grid-template-columns: 1fr; }
+            .hero-stats { gap: 1rem; }
+            .hero-stat { min-width: 120px; padding: 0.8rem 1rem; }
+        }
+
+        /* ===== VT Quality Comparison ===== */
+        .vt-comparison {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .vt-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .vt-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .vt-card.best {
+            border-color: rgba(22, 163, 74, 0.35);
+            background: rgba(22, 163, 74, 0.04);
+        }
+
+        .vt-card .vt-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.3rem;
+        }
+
+        .vt-card .vt-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .vt-card .vt-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 0.3rem;
+        }
+
+        .vt-card .vt-unit {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* ===== Animated gradient border effect ===== */
+        .glow-card {
+            position: relative;
+        }
+
+        .glow-card::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: -1px; right: -1px; bottom: -1px;
+            border-radius: 17px;
+            background: linear-gradient(135deg, rgba(22, 163, 74, 0.35), rgba(124, 58, 237, 0.35), rgba(22, 163, 74, 0.35));
+            background-size: 200% 200%;
+            animation: gradientShift 4s ease infinite;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .glow-card:hover::before {
+            opacity: 1;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* ===== Figure caption ===== */
+        .fig-caption {
+            text-align: center;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-top: 1rem;
+            line-height: 1.5;
+        }
+
+        .fig-caption strong {
+            color: var(--text-secondary);
+        }
+
+        /* Mobile menu */
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .menu-toggle { display: block; }
+            .navbar-right { display: none; }
+        }
+
+        /* ===== Scroll Progress Bar ===== */
+        .scroll-progress {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            height: 2px;
+            background: var(--gradient-green);
+            z-index: 999;
+            width: 0%;
+        }
+
+        /* ===== Hero Entrance Animations ===== */
+        @keyframes heroFadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero-content > * {
+            opacity: 0;
+            animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .hero-content > *:nth-child(1) { animation-delay: 0.15s; }
+        .hero-content > *:nth-child(2) { animation-delay: 0.3s; }
+        .hero-content > *:nth-child(3) { animation-delay: 0.45s; }
+        .hero-content > *:nth-child(4) { animation-delay: 0.55s; }
+        .hero-content > *:nth-child(5) { animation-delay: 0.65s; }
+        .hero-content > *:nth-child(6) { animation-delay: 0.75s; }
+        .hero-content > *:nth-child(7) { animation-delay: 0.85s; }
+
+        .hero-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ===== Scroll Reveal ===== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(36px);
+            transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+
+        /* ===== Active Nav Link ===== */
+        .navbar-links a.active {
+            color: var(--accent-green);
+        }
+
+        /* ===== Carousel Dots ===== */
+        .carousel-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 1rem;
+        }
+
+        .carousel-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border-color);
+            border: none;
+            cursor: pointer;
+            transition: all 0.35s;
+            padding: 0;
+        }
+
+        .carousel-dot.active {
+            background: var(--accent-green);
+            width: 28px;
+            border-radius: 4px;
+        }
+
+        /* ===== Back to Top ===== */
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            cursor: pointer;
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px);
+            transition: all 0.35s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .back-to-top:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+            transform: translateY(-3px);
+        }
+
+        /* ===== Lightbox ===== */
+        .lightbox-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(16px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .lightbox-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .lightbox-overlay img {
+            max-width: 92vw;
+            max-height: 90vh;
+            border-radius: 12px;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+            transform: scale(0.92);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .lightbox-overlay.active img {
+            transform: scale(1);
+        }
+
+        .zoomable {
+            cursor: zoom-in;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .zoomable:hover {
+            transform: scale(1.015);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ===== Image styling ===== */
+        .result-fig {
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .finding-card {
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        /* ===== Stats counter animation ===== */
+        @keyframes countPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.06); }
+        }
+
+        .hero-stat:hover .value {
+            animation: countPulse 0.5s ease;
+        }
+
+        .hero-stat {
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .hero-stat:hover {
+            transform: translateY(-4px);
+            border-color: rgba(22, 163, 74, 0.35);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        /* ===== Improved Footer ===== */
+        .footer {
+            position: relative;
+            padding: 4rem 2rem 3rem;
+        }
+
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 10%; right: 10%;
+            height: 1.5px;
+            background: linear-gradient(90deg, transparent, var(--accent-green), var(--accent-purple), transparent);
+            opacity: 0.5;
+        }
+
+        .footer-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent-green);
+        }
+
+        /* ===== Section divider accents ===== */
+        section {
+            position: relative;
+        }
+
+        .section-label {
+            position: relative;
+            padding-left: 1.2rem;
+        }
+
+        .section-label::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 100%;
+            border-radius: 2px;
+            background: var(--gradient-green);
+        }
+
+        /* ===== Method equation upgrade ===== */
+        .method-equation {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .method-equation::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-purple), var(--accent-blue));
+        }
+
+        /* ===== Table row animation ===== */
+        .results-table tbody tr {
+            transition: background 0.2s;
+        }
+
+        .results-table .highlight-row {
+            position: relative;
+        }
+
+        .results-table .highlight-row td:first-child::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: var(--accent-green);
+        }
+
+        /* ===== Abstract quote styling ===== */
+        .abstract-content {
+            position: relative;
+        }
+
+        .abstract-content::before {
+            content: '"';
+            position: absolute;
+            top: -0.5rem;
+            left: 1.5rem;
+            font-size: 5rem;
+            color: rgba(22, 163, 74, 0.07);
+            font-family: Georgia, serif;
+            line-height: 1;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Scroll Progress -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Lightbox -->
+<div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
+    <img id="lightboxImg" src="" alt="Enlarged view">
+</div>
+
+<!-- Navbar -->
+<nav class="navbar">
+    <a class="navbar-brand" href="#">
+        <span class="icon">🔬</span>
+        Visual-OPSD
+    </a>
+    <ul class="navbar-links">
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#finding">Finding</a></li>
+        <li><a href="#method">Method</a></li>
+        <li><a href="#results">Results</a></li>
+        <li><a href="#cases">Cases</a></li>
+        <li><a href="#conclusion">Conclusion</a></li>
+        <li><a href="#citation">Citation</a></li>
+    </ul>
+    <div class="navbar-right">
+        <a class="nav-btn nav-btn-outline" href="https://arxiv.org/pdf/2606.18974" target="_blank">📄 Paper</a>
+        <a class="nav-btn nav-btn-outline" href="https://github.com/TiezMind/Visual-OPSD" target="_blank">💻 Code</a>
+    </div>
+    <button class="menu-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('show')">☰</button>
+</nav>
+
+<!-- Hero -->
+<section class="hero" id="hero">
+    <canvas class="hero-canvas" id="heroCanvas"></canvas>
+    <div class="hero-content">
+        <h1>
+            <span class="highlight">Visual-OPSD</span>
+        </h1>
+        <h1 style="font-size: clamp(1.2rem, 2.5vw, 1.8rem); font-weight: 600; color: var(--text-secondary); margin-top: 0.5rem;">
+            Cross-Modal On-Policy Self-Distillation<br>for Efficient Unified Multimodal Reasoning
+        </h1>
+
+        <p class="hero-subtitle">
+            Distill the visual generation pathway's reasoning knowledge into text-only inference &mdash; no image generation at test time, yet outperforming the generative teacher.
+        </p>
+
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <div class="value green">14.3×</div>
+                <div class="label">Inference Speedup</div>
+            </div>
+            <div class="hero-stat">
+                <div class="value purple">+3.40pp</div>
+                <div class="label">Avg. over Teacher</div>
+            </div>
+            <div class="hero-stat">
+                <div class="value blue">6/9</div>
+                <div class="label">Tasks Improved</div>
+            </div>
+            <div class="hero-stat">
+                <div class="value teal">+63.8pp</div>
+                <div class="label">vs VLMs on VSP</div>
+            </div>
+        </div>
+
+        <div class="hero-buttons">
+            <a class="btn btn-primary" href="https://arxiv.org/pdf/2606.18974" target="_blank">📄 Read Paper</a>
+            <a class="btn btn-secondary" href="https://github.com/TiezMind/Visual-OPSD" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="authors">
+            <span class="name">Pengyu Li</span><sup>1,3†</sup>,
+            <span class="name">Zhitao Gao</span><sup>1,3</sup>,
+            <span class="name">Lingling Zhang</span><sup>1,2*</sup>,
+            <span class="name">Muye Huang</span><sup>1,3</sup>,
+            <span class="name">Yuanming Li</span><sup>4</sup>,
+            <span class="name">Fangzhi Xu</span><sup>1</sup>,
+            <span class="name">Jun Liu</span><sup>1,2</sup>
+            <div class="affil">
+                <sup>1</sup>Xi'an Jiaotong University &nbsp;&nbsp;
+                <sup>2</sup>MOE KLINNS Lab &nbsp;&nbsp;
+                <sup>3</sup>Shaanxi Province Key Lab of Big Data Knowledge Engineering &nbsp;&nbsp;
+                <sup>4</sup>Sun Yat-sen University
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Overview / Teaser -->
+<section class="overview-section" id="overview">
+    <div class="container">
+        <span class="section-label">Overview</span>
+        <h2 class="section-title">What is Visual-OPSD?</h2>
+        <p class="section-desc">
+            Unified multimodal models generate intermediate "visual thoughts" (VTs) via diffusion during reasoning, but this costs ~14× latency. We discover that <strong>rendered VT pixels are not load-bearing</strong> — yet the generation pathway encodes valuable reasoning knowledge. Visual-OPSD distills this knowledge into text-only inference via cross-modal on-policy self-distillation.
+        </p>
+        <img class="teaser-img" src="figures/vpd_main_results.png"
+             alt="Visual-OPSD main results: matches teacher at 14x lower latency">
+        <p class="fig-caption">
+            <strong>Visual-OPSD matches its VT-generating teacher at 14× lower latency.</strong>
+            (a) Visual-OPSD (green) ≥ teacher (purple) on 6/9 tasks.
+            (b) Per-task Δ: VSP +10.0, VisPuzzle +8.5, BLINK-J +11.3.
+            (c) Pareto: 74.0%/10.0s vs. 70.6%/142.8s.
+        </p>
+    </div>
+</section>
+
+<!-- Key Finding -->
+<section id="finding">
+    <div class="container">
+        <span class="section-label">Key Finding</span>
+        <h2 class="section-title">Visual Thoughts: Load-Bearing Pixels or Pathway Knowledge?</h2>
+        <p class="section-desc">
+            Through controlled interventions on ThinkMorph, we reveal a surprising gap: rendered VT pixels contribute little to accuracy, yet the generation pathway encodes substantial distributional knowledge measurable via KL divergence (4.64 nats/token).
+        </p>
+
+        <div class="finding-grid">
+            <div class="finding-card">
+                <img src="figures/pilot_intervention.png" alt="Pilot intervention study">
+                <div class="card-body">
+                    <h4>Inference-Time VT Intervention</h4>
+                    <p>Removing or corrupting intermediate VTs at inference leaves accuracy largely unchanged across all nine benchmarks. The rendered pixels are not load-bearing.</p>
+                </div>
+            </div>
+            <div class="finding-card">
+                <img src="figures/attention.png" alt="Attention analysis">
+                <div class="card-body">
+                    <h4>Cross-Modal Attention Analysis</h4>
+                    <p>Once generated, a VT dominates subsequent reasoning attention regardless of its content — even Gaussian noise receives the same attention allocation.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="vt-comparison" style="margin-top: 3rem;">
+            <div class="vt-card">
+                <div class="vt-label">Teacher VT = None</div>
+                <div class="vt-name">Text-only SFT</div>
+                <div class="vt-value" style="color: var(--text-muted);">63.75</div>
+                <div class="vt-unit">Avg Accuracy (9 benchmarks)</div>
+            </div>
+            <div class="vt-card">
+                <div class="vt-label">Teacher VT = Gaussian Noise</div>
+                <div class="vt-name" style="color: var(--accent-orange);">Visual-OPSD-Noise</div>
+                <div class="vt-value" style="color: var(--accent-orange);">64.15</div>
+                <div class="vt-unit">+0.40pp (≈ regularization only)</div>
+            </div>
+            <div class="vt-card best">
+                <div class="vt-label">Teacher VT = Real VT</div>
+                <div class="vt-name" style="color: var(--accent-green);">Visual-OPSD (Ours)</div>
+                <div class="vt-value" style="color: var(--accent-green);">74.03</div>
+                <div class="vt-unit">+10.28pp (semantic content)</div>
+            </div>
+        </div>
+        <p class="fig-caption" style="margin-top: 1rem;">
+            <strong>VT Information Quality Scaling.</strong> The decisive gap (+10.28pp vs +0.40pp) confirms knowledge originates from VT semantic content, not regularization.
+        </p>
+    </div>
+</section>
+
+<!-- Key Capabilities -->
+<section style="background: var(--bg-secondary);">
+    <div class="container">
+        <span class="section-label">Key Capabilities</span>
+        <h2 class="section-title">Six Pillars of Visual-OPSD</h2>
+
+        <div class="cap-grid">
+            <div class="cap-card glow-card">
+                <div class="cap-icon green">🧠</div>
+                <h4>Cross-Modal Self-Distillation</h4>
+                <p>First OPSD framework bridging the generation–understanding gap within a unified multimodal architecture. Teacher and student share identical weights.</p>
+            </div>
+            <div class="cap-card glow-card">
+                <div class="cap-icon purple">⚡</div>
+                <h4>14.3× Faster Inference</h4>
+                <p>Eliminates 50-step diffusion at test time: 10.0s vs 142.8s per sample. No architectural changes or extra parameters needed.</p>
+            </div>
+            <div class="cap-card glow-card">
+                <div class="cap-icon blue">📊</div>
+                <h4>Student > Teacher</h4>
+                <p>Distribution-level distillation de-noises VT artifacts: the student outperforms its generative teacher on 6/9 benchmarks (+3.40pp average).</p>
+            </div>
+            <div class="cap-card glow-card">
+                <div class="cap-icon teal">🎯</div>
+                <h4>On-Policy Trajectories</h4>
+                <p>Student samples its own completions, keeping training on-policy. Image-skip injection prevents collapse into generation mode.</p>
+            </div>
+            <div class="cap-card glow-card">
+                <div class="cap-icon orange">🔬</div>
+                <h4>Rigorous Controls</h4>
+                <p>Gaussian-noise control (+0.40pp vs +10.28pp) and KL gap-closing analysis (58.4% closure) confirm semantic VT content is the knowledge source.</p>
+            </div>
+            <div class="cap-card glow-card">
+                <div class="cap-icon red">🌟</div>
+                <h4>Spatial Reasoning Champion</h4>
+                <p>Dominates same-scale VLMs on spatial tasks: VSP 85.8% vs InternVL3.5-8B 8.2% and Qwen3-VL-8B 22.0%.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Method -->
+<section class="method-section" id="method">
+    <div class="container">
+        <span class="section-label">Method</span>
+        <h2 class="section-title">Cross-Modal On-Policy Self-Distillation</h2>
+        <p class="section-desc">
+            Visual-OPSD exploits the information asymmetry between generation and understanding pathways within a single unified multimodal model. No external teacher, no architectural changes.
+        </p>
+
+        <img class="method-figure" src="figures/Visual-OPSD-pipeline.png"
+             alt="Visual-OPSD pipeline overview">
+        <p class="fig-caption">
+            <strong>Overview of Visual-OPSD.</strong> A <span style="color: var(--accent-green);">student</span> π<sub>θ</sub>(·|C<sub>S</sub>) sees only [sys, ViT(x), q], while an EMA <span style="color: var(--accent-orange);">teacher</span> π<sub>θ̄</sub>(·|C<sub>T</sub>) additionally receives privileged VTs. Both rescore the student's on-policy completion via per-token JSD. At inference, the student runs text-only — 14.3× faster, +3.40pp over teacher.
+        </p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <h4>KL Diagnostic</h4>
+                <p>Measure the distributional gap between VT-conditioned and question-only contexts. Confirms 4.64 nats/token of distillable generation knowledge.</p>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <h4>On-Policy Sampling</h4>
+                <p>Student generates completions from its current policy. Image-skip injection handles &lt;image_start&gt; tokens, keeping sampling on-policy without generation mode collapse.</p>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <h4>JSD Distillation</h4>
+                <p>Per-token JSD with pointwise clipping (τ=0.05) and top-K=256 truncation. EMA teacher (α=0.995) provides stable, progressively updated targets.</p>
+            </div>
+        </div>
+
+        <div class="method-equation">
+            L(θ) = (1/T) Σ<sub>t</sub> JSD<sub>β</sub>(p<sub>T</sub><sup>(t)</sup> ‖ p<sub>S</sub><sup>(t)</sup>), &nbsp;&nbsp; β = 0.5 (symmetric JSD)
+        </div>
+
+        <img class="method-figure" src="figures/Visual-OPSD-compare.png"
+             alt="Visual-OPSD vs prior methods comparison">
+        <p class="fig-caption">
+            <strong>Prior interleaved visual CoT vs. Visual-OPSD.</strong>
+            (Top) Previous methods iterate generate-then-reason, rendering each VT via 50-step diffusion at high cost.
+            (Bottom) Visual-OPSD distills the generation pathway into a text-only student, yielding +3.40pp at 14.3× speedup with no image generation at inference.
+        </p>
+    </div>
+</section>
+
+<!-- Results -->
+<section id="results">
+    <div class="container">
+        <span class="section-label">Experiments</span>
+        <h2 class="section-title">Main Results Across 9 Benchmarks</h2>
+        <p class="section-desc">
+            Visual-OPSD achieves the best average accuracy among open 7–8B models while running 14.3× faster than ThinkMorph.
+        </p>
+
+        <div class="results-table-wrapper">
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>VSP ↑</th>
+                        <th>VisPuzzle ↑</th>
+                        <th>ChartQA ↑</th>
+                        <th>VStar ↑</th>
+                        <th>BLINK-J ↑</th>
+                        <th>MMVP ↑</th>
+                        <th>SAT ↑</th>
+                        <th>BLINK ↑</th>
+                        <th>CV-Bench ↑</th>
+                        <th>Avg ↑</th>
+                        <th>Lat. (s) ↓</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="group-header"><td colspan="12">Vision-Language Models (VLMs)</td></tr>
+                    <tr>
+                        <td>InternVL3.5-8B</td>
+                        <td>8.17</td><td>34.75</td><td>76.26</td><td class="val-second">68.59</td><td class="val-second">71.33</td>
+                        <td>76.33</td><td>45.33</td><td>59.60</td><td class="val-second">81.99</td><td>58.04</td><td>–</td>
+                    </tr>
+                    <tr>
+                        <td>Qwen3-VL-8B</td>
+                        <td>22.00</td><td>37.00</td><td class="val-best">82.55</td><td class="val-best">84.29</td><td>68.66</td>
+                        <td class="val-second">77.66</td><td class="val-best">54.00</td><td class="val-best">69.43</td><td class="val-best">85.63</td><td>64.58</td><td>–</td>
+                    </tr>
+                    <tr>
+                        <td style="color: var(--text-muted);">GPT-4o</td>
+                        <td>33.50</td><td>43.75</td><td>76.34</td><td>61.78</td><td>72.67</td>
+                        <td>84.67</td><td>28.00</td><td>60.28</td><td>75.61</td><td>59.62</td><td>–</td>
+                    </tr>
+                    <tr>
+                        <td style="color: var(--text-muted);">GPT-5</td>
+                        <td>57.33</td><td>78.00</td><td>80.85</td><td>71.73</td><td>77.33</td>
+                        <td>86.33</td><td>73.30</td><td>69.86</td><td>85.46</td><td>75.58</td><td>–</td>
+                    </tr>
+
+                    <tr class="group-header"><td colspan="12">Unified Multimodal Models (UMMs)</td></tr>
+                    <tr>
+                        <td>Janus-Pro-7B</td>
+                        <td>0.00</td><td>33.50</td><td>43.08</td><td>38.22</td><td>50.67</td>
+                        <td>63.33</td><td>22.00</td><td>38.51</td><td>67.83</td><td>39.68</td><td>–</td>
+                    </tr>
+                    <tr>
+                        <td>BAGEL-7B</td>
+                        <td>0.83</td><td>35.00</td><td>61.82</td><td>55.49</td><td>67.33</td>
+                        <td>70.33</td><td>44.67</td><td>47.66</td><td>76.03</td><td>51.02</td><td>–</td>
+                    </tr>
+                    <tr>
+                        <td>ThinkMorph</td>
+                        <td class="val-second">75.83</td><td class="val-second">77.50</td><td>78.00</td><td>67.01</td><td>66.00</td>
+                        <td class="val-best">78.33</td><td class="val-second">52.67</td><td>59.49</td><td>80.86</td><td class="val-second">70.63</td><td>142.8</td>
+                    </tr>
+
+                    <tr class="group-header"><td colspan="12">Ours</td></tr>
+                    <tr>
+                        <td>Text-only SFT</td>
+                        <td>49.17</td><td>63.50</td><td class="val-second">81.66</td><td>56.02</td><td>68.67</td>
+                        <td>76.33</td><td>46.63</td><td>54.39</td><td>77.37</td><td>63.75</td><td>28.5</td>
+                    </tr>
+                    <tr>
+                        <td style="color: var(--accent-orange);">Visual-OPSD-Noise</td>
+                        <td>50.83</td><td>64.50</td><td>73.77</td><td>61.70</td><td>68.66</td>
+                        <td>75.33</td><td>48.00</td><td>55.49</td><td>79.09</td><td>64.15</td><td class="val-second">14.9</td>
+                    </tr>
+                    <tr class="highlight-row">
+                        <td style="color: var(--accent-green);">Visual-OPSD (Ours)</td>
+                        <td class="val-best">85.83</td><td class="val-best">86.00</td><td>78.79</td><td>64.92</td><td class="val-best">77.33</td>
+                        <td>77.33</td><td class="val-best">54.00</td><td class="val-second">61.44</td><td>80.64</td><td class="val-best">74.03</td><td class="val-best">10.0</td>
+                    </tr>
+                    <tr class="delta-row">
+                        <td>Δ vs. ThinkMorph</td>
+                        <td class="delta-pos">+10.00</td><td class="delta-pos">+8.50</td><td class="delta-pos">+0.79</td><td class="delta-neg">−2.09</td><td class="delta-pos">+11.33</td>
+                        <td class="delta-neg">−1.00</td><td class="delta-pos">+1.33</td><td class="delta-pos">+1.95</td><td class="delta-neg">−0.22</td><td class="delta-pos">+3.40</td><td class="delta-pos">14.3×</td>
+                    </tr>
+                    <tr class="delta-row">
+                        <td>Δ vs. Text-only SFT</td>
+                        <td class="delta-pos">+36.66</td><td class="delta-pos">+22.50</td><td class="delta-neg">−2.87</td><td class="delta-pos">+8.90</td><td class="delta-pos">+8.66</td>
+                        <td class="delta-pos">+1.00</td><td class="delta-pos">+7.37</td><td class="delta-pos">+7.05</td><td class="delta-pos">+3.27</td><td class="delta-pos">+10.28</td><td class="delta-pos">2.9×</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="results-figures">
+            <div class="result-fig">
+                <img src="figures/vpd_win_loss.png" alt="Win/Loss analysis">
+                <div class="caption"><strong>Per-sample Win/Loss.</strong> Visual-OPSD wins substantially more on VT-useful spatial tasks (BLINK-J net +11.3pp, VSP +10.0pp), while deficits are near-symmetric.</div>
+            </div>
+            <div class="result-fig">
+                <img src="figures/kl_token_heatmap.png" alt="KL token heatmap">
+                <div class="caption"><strong>Per-token KL Divergence.</strong> Generation knowledge concentrates on content tokens (spatial labels, object references, quantities), while function words carry near-zero divergence.</div>
+            </div>
+        </div>
+
+        <div class="results-figures" style="margin-top: 1.5rem;">
+            <div class="result-fig">
+                <img src="figures/vpd_delta_vs_sft.png" alt="Knowledge transfer by task">
+                <div class="caption"><strong>Task-Specific Knowledge Transfer.</strong> Spatial reasoning tasks benefit most (mean Δ=+10.28pp over SFT), while chart understanding shows minimal change.</div>
+            </div>
+            <div class="result-fig">
+                <img src="figures/vpd_latency_comparison.png" alt="Latency comparison">
+                <div class="caption"><strong>Inference Efficiency.</strong> Visual-OPSD is 14.3× faster than the VT teacher and 2.9× faster than text-only SFT, enabled by ~2× shorter outputs.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Case Studies -->
+<section class="case-section" id="cases">
+    <div class="container">
+        <span class="section-label">Case Studies</span>
+        <h2 class="section-title">When VT Images Mislead Reasoning</h2>
+        <p class="section-desc">
+            We present cases where ThinkMorph's generated VT images actively harm reasoning, while Visual-OPSD avoids these failure modes by reasoning directly from the original input.
+        </p>
+
+        <div class="case-carousel">
+            <div class="case-cards" id="caseCards">
+                <!-- Case 1 -->
+                <div class="case-card">
+                    <div class="case-images">
+                        <img src="figures/case1_input.png" alt="Input">
+                        <img src="figures/case1_optA.png" alt="Option A">
+                        <img src="figures/case1_optB.png" alt="Option B">
+                        <img src="figures/case1_vt.png" alt="ThinkMorph VT">
+                    </div>
+                    <div class="case-body">
+                        <div class="case-question">
+                            <strong>Case 1: Self-Reinforcing VT Confirmation</strong><br>
+                            Q: Which image is the missing part in the first image? &nbsp; GT: <strong>B</strong>
+                        </div>
+                        <div class="case-comparison">
+                            <div class="case-model wrong">
+                                <div class="model-name">ThinkMorph <span class="answer-tag">✗ A</span></div>
+                                <p>VT generated after committing to A visually reinforces the error, creating a self-reinforcing feedback loop.</p>
+                            </div>
+                            <div class="case-model correct">
+                                <div class="model-name">Visual-OPSD <span class="answer-tag">✓ B</span></div>
+                                <p>Directly compares both options against original input, correctly identifying contour alignment.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Case 2 -->
+                <div class="case-card">
+                    <div class="case-images">
+                        <img src="figures/case2_input.png" alt="Input">
+                        <img src="figures/case2_optA.png" alt="Option A">
+                        <img src="figures/case2_optB.png" alt="Option B">
+                        <img src="figures/case2_vt.png" alt="ThinkMorph VT">
+                    </div>
+                    <div class="case-body">
+                        <div class="case-question">
+                            <strong>Case 2: Pixel-Level Noise Masking</strong><br>
+                            Q: Which image is the missing part in the first image? &nbsp; GT: <strong>B</strong>
+                        </div>
+                        <div class="case-comparison">
+                            <div class="case-model wrong">
+                                <div class="model-name">ThinkMorph <span class="answer-tag">✗ A</span></div>
+                                <p>VT blending artifacts at patch boundaries mask spatial discontinuities that reveal incorrect placement.</p>
+                            </div>
+                            <div class="case-model correct">
+                                <div class="model-name">Visual-OPSD <span class="answer-tag">✓ B</span></div>
+                                <p>Identifies correct spatial continuity by analyzing alignment of visual elements directly from the original.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Case 3 -->
+                <div class="case-card">
+                    <div class="case-images">
+                        <img src="figures/case3_input.png" alt="Input" style="flex: 2;">
+                        <img src="figures/case3_vt.png" alt="ThinkMorph VT" style="flex: 2;">
+                    </div>
+                    <div class="case-body">
+                        <div class="case-question">
+                            <strong>Case 3: VT Strips Spatial Context</strong><br>
+                            Q: Is she about to swing the racket towards her left or right? &nbsp; GT: <strong>A (right)</strong>
+                        </div>
+                        <div class="case-comparison">
+                            <div class="case-model wrong">
+                                <div class="model-name">ThinkMorph <span class="answer-tag">✗ B (left)</span></div>
+                                <p>VT bounding box isolates the racket from full-body context, causing reasoning from a spatially impoverished representation.</p>
+                            </div>
+                            <div class="case-model correct">
+                                <div class="model-name">Visual-OPSD <span class="answer-tag">✓ A (right)</span></div>
+                                <p>Integrates holistic body cues — foot positioning, torso orientation, and shoulder angle — to determine correct direction.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Case 4 -->
+                <div class="case-card">
+                    <div class="case-images">
+                        <img src="figures/case4_frame1.png" alt="Frame 1">
+                        <img src="figures/case4_frame2.png" alt="Frame 2">
+                        <img src="figures/case4_vt.png" alt="ThinkMorph VT">
+                    </div>
+                    <div class="case-body">
+                        <div class="case-question">
+                            <strong>Case 4: VT-Induced Self-Contradiction</strong><br>
+                            Q: Were any objects moved from their original positions? &nbsp; GT: <strong>A (chair moved right & towards camera)</strong>
+                        </div>
+                        <div class="case-comparison">
+                            <div class="case-model wrong">
+                                <div class="model-name">ThinkMorph <span class="answer-tag">✗ B</span></div>
+                                <p>Round 0 reasoning contradicts itself; VT resolves internal ambiguity toward the wrong spatial direction.</p>
+                            </div>
+                            <div class="case-model correct">
+                                <div class="model-name">Visual-OPSD <span class="answer-tag">✓ A</span></div>
+                                <p>Consistent reasoning without VT-induced self-contradiction. Correctly assesses chair movement direction.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="carousel-nav">
+                <button class="carousel-btn" onclick="scrollCases(-1)">‹</button>
+                <button class="carousel-btn" onclick="scrollCases(1)">›</button>
+            </div>
+            <div class="carousel-dots" id="carouselDots"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Conclusion -->
+<section id="conclusion">
+    <div class="container">
+        <span class="section-label">Conclusion</span>
+        <h2 class="section-title">Key Takeaways</h2>
+
+        <div class="abstract-content">
+            <p>
+                We introduced Visual On-Policy Self-Distillation (Visual-OPSD), the first On-Policy SelfDistillation framework that operates across modalities within a single unified multimodal model.
+Visual-OPSD provides direct evidence that the visual generation pathway of UMMs encodes reasoning knowledge into the model’s representations beyond what the generated pixels themselves
+contain, and that this knowledge can be distilled into the text understanding pathway via on-policy
+JSD without any architectural changes. The Visual-OPSD student outperforms its generative teacher
+on 6/9 benchmarks (+3.40pp on average) while achieving a 14.3× inference speedup, and substantially exceeds same-scale dedicated VLMs on spatial reasoning tasks. The Visual-OPSD-Noise control (+0.40pp vs. +10.28pp) and the post-distillation KL closing analysis (58.4% vs. 3.5%) together
+confirm that the transferred signal specifically requires the generation pathway’s semantic content,
+ruling out regularization as the primary mechanism.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- Citation -->
+<section class="citation-section" id="citation">
+    <div class="container">
+        <span class="section-label">Citation</span>
+        <h2 class="section-title">BibTeX</h2>
+
+        <div class="citation-box">
+            <button class="copy-btn" onclick="copyCitation()">📋 Copy</button>
+            <pre id="bibtex">@article{li2026visual,
+    title={Visual-OPSD: Cross-Modal On-Policy Self-Distillation for Efficient Unified Multimodal Reasoning},
+    author={Li, Pengyu and Gao, Zhitao and Zhang, Lingling and Huang, Muye and Li, Yuanming and Xu, Fangzhi and Liu, Jun},
+    journal={arXiv preprint arXiv:2606.18974},
+    year={2026}
+}</pre>
+        </div>
+    </div>
+</section>
+
+<!-- Back to Top -->
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">↑</button>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="footer-inner">
+        <div class="footer-links">
+            <a href="https://arxiv.org/pdf/2606.18974" target="_blank">Paper</a>
+            <a href="https://github.com/TiezMind/Visual-OPSD" target="_blank">GitHub</a>
+            <a href="#citation">Cite Us</a>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted);">
+            Visual-OPSD &copy; 2026 &middot; Xi'an Jiaotong University
+        </p>
+    </div>
+</footer>
+
+<script>
+/* ===== Carousel ===== */
+function scrollCases(dir) {
+    const container = document.getElementById('caseCards');
+    const card = container.querySelector('.case-card');
+    const scrollAmount = card.offsetWidth + 24;
+    container.scrollBy({ left: dir * scrollAmount, behavior: 'smooth' });
+}
+
+/* ===== Copy citation ===== */
+function copyCitation() {
+    const text = document.getElementById('bibtex').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => { btn.textContent = '📋 Copy'; }, 2000);
+    });
+}
+
+/* ===== Smooth scroll for nav links ===== */
+document.querySelectorAll('.navbar-links a').forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+});
+
+/* ===== Scroll: progress bar + active nav + back-to-top ===== */
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.navbar-links a');
+const progressBar = document.getElementById('scrollProgress');
+const backToTop = document.getElementById('backToTop');
+
+window.addEventListener('scroll', () => {
+    const scrollY = window.scrollY;
+    const docH = document.documentElement.scrollHeight - window.innerHeight;
+    progressBar.style.width = (scrollY / docH * 100) + '%';
+
+    backToTop.classList.toggle('visible', scrollY > 600);
+
+    let current = '';
+    sections.forEach(sec => {
+        if (scrollY >= sec.offsetTop - 200) current = sec.id;
+    });
+    navLinks.forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+});
+
+/* ===== Scroll Reveal (Intersection Observer) ===== */
+function initReveal() {
+    const targets = document.querySelectorAll(
+        '.section-label, .section-title, .section-desc, ' +
+        '.finding-card, .cap-card, .method-step, .method-figure, .method-equation, ' +
+        '.results-table-wrapper, .result-fig, .case-carousel, ' +
+        '.abstract-content, .citation-box, .vt-card, .teaser-img, .fig-caption, ' +
+        '.vt-comparison, .finding-grid, .hero-stats'
+    );
+    targets.forEach(el => el.classList.add('reveal'));
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('revealed');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+    targets.forEach(el => observer.observe(el));
+}
+initReveal();
+
+/* ===== Carousel Dots ===== */
+function initCarouselDots() {
+    const container = document.getElementById('caseCards');
+    const dotsWrap = document.getElementById('carouselDots');
+    const cards = container.querySelectorAll('.case-card');
+    cards.forEach((_, i) => {
+        const dot = document.createElement('button');
+        dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+        dot.setAttribute('aria-label', 'Case ' + (i + 1));
+        dot.onclick = () => {
+            const card = container.querySelector('.case-card');
+            container.scrollTo({ left: i * (card.offsetWidth + 24), behavior: 'smooth' });
+        };
+        dotsWrap.appendChild(dot);
+    });
+
+    container.addEventListener('scroll', () => {
+        const card = container.querySelector('.case-card');
+        const idx = Math.round(container.scrollLeft / (card.offsetWidth + 24));
+        dotsWrap.querySelectorAll('.carousel-dot').forEach((d, i) => {
+            d.classList.toggle('active', i === idx);
+        });
+    });
+}
+initCarouselDots();
+
+/* ===== Lightbox ===== */
+function openLightbox(src) {
+    const lb = document.getElementById('lightbox');
+    document.getElementById('lightboxImg').src = src;
+    lb.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('active');
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+document.querySelectorAll(
+    '.teaser-img, .finding-card img, .method-figure, .result-fig img'
+).forEach(img => {
+    img.classList.add('zoomable');
+    img.addEventListener('click', () => openLightbox(img.src));
+});
+
+/* ===== Hero Canvas: Animated Dot Grid ===== */
+(function() {
+    const canvas = document.getElementById('heroCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let w, h, dots = [];
+    const SPACING = 60, DOT_R = 1.2, LINE_DIST = 120;
+
+    function resize() {
+        w = canvas.width = canvas.offsetWidth;
+        h = canvas.height = canvas.offsetHeight;
+        dots = [];
+        for (let x = SPACING / 2; x < w; x += SPACING) {
+            for (let y = SPACING / 2; y < h; y += SPACING) {
+                dots.push({
+                    ox: x, oy: y, x, y,
+                    vx: (Math.random() - 0.5) * 0.15,
+                    vy: (Math.random() - 0.5) * 0.15,
+                    alpha: 0.12 + Math.random() * 0.12
+                });
+            }
+        }
+    }
+
+    let mx = -1000, my = -1000;
+    canvas.parentElement.addEventListener('mousemove', e => {
+        const r = canvas.getBoundingClientRect();
+        mx = e.clientX - r.left;
+        my = e.clientY - r.top;
+    });
+    canvas.parentElement.addEventListener('mouseleave', () => { mx = -1000; my = -1000; });
+
+    function draw() {
+        ctx.clearRect(0, 0, w, h);
+        dots.forEach(d => {
+            d.x += d.vx;
+            d.y += d.vy;
+            if (Math.abs(d.x - d.ox) > 8) d.vx *= -1;
+            if (Math.abs(d.y - d.oy) > 8) d.vy *= -1;
+
+            const dx = mx - d.x, dy = my - d.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            let a = d.alpha;
+            if (dist < 160) a = d.alpha + (0.6 - d.alpha) * (1 - dist / 160);
+
+            ctx.beginPath();
+            ctx.arc(d.x, d.y, DOT_R, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(22, 163, 74, ${a})`;
+            ctx.fill();
+        });
+
+        for (let i = 0; i < dots.length; i++) {
+            for (let j = i + 1; j < dots.length; j++) {
+                const dx = dots[i].x - dots[j].x, dy = dots[i].y - dots[j].y;
+                const d = Math.sqrt(dx * dx + dy * dy);
+                if (d < LINE_DIST) {
+                    const midX = (dots[i].x + dots[j].x) / 2;
+                    const midY = (dots[i].y + dots[j].y) / 2;
+                    const mdx = mx - midX, mdy = my - midY;
+                    const mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+                    let la = 0.03 * (1 - d / LINE_DIST);
+                    if (mDist < 160) la += 0.12 * (1 - mDist / 160);
+                    ctx.beginPath();
+                    ctx.moveTo(dots[i].x, dots[i].y);
+                    ctx.lineTo(dots[j].x, dots[j].y);
+                    ctx.strokeStyle = `rgba(22, 163, 74, ${la})`;
+                    ctx.lineWidth = 0.6;
+                    ctx.stroke();
+                }
+            }
+        }
+        requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+    draw();
+})();
+</script>
+
+</body>
+</html>
